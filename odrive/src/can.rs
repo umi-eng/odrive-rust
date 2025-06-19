@@ -231,12 +231,12 @@ impl ODrive {
 /// Version information.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Version {
-    protocol_version: u8,
-    hw_version_major: u8,
-    hw_version_minor: u8,
-    hw_version_variant: u8,
-    fw_version_major: u8,
-    fw_version_minor: u8,
-    fw_version_revision: u8,
-    fw_version_unreleased: bool,
+    pub protocol_version: u8,
+    pub hw_version_major: u8,
+    pub hw_version_minor: u8,
+    pub hw_version_variant: u8,
+    pub fw_version_major: u8,
+    pub fw_version_minor: u8,
+    pub fw_version_revision: u8,
+    pub fw_version_unreleased: bool,
 }
