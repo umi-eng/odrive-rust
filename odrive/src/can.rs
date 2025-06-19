@@ -307,7 +307,7 @@ impl ODrive {
 
     /// Get bus voltage and current.
     pub async fn get_bus_voltage_current(&self) -> io::Result<BusVoltageCurrent> {
-        let id = Id::new(self.axis, 0x15);
+        let id = Id::new(self.axis, 0x17);
 
         // request the message with an rtr frame
         self.interface
