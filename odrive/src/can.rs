@@ -418,6 +418,37 @@ impl ODrive {
             estimate: f32::from_le_bytes([data[4], data[5], data[6], data[7]]),
         })
     }
+
+    /// Get power values.
+    pub async fn get_powers(&self) -> io::Result<Powers> {
+        let id = Id::new(self.axis, 0x1d);
+
+        // request the message with an rtr frame
+        self.interface
+            .write_frame(CanFrame::new_remote(id, 0).unwrap())
+            .await?;
+
+        let frame = loop {
+            let frame = self.interface.read_frame().await?;
+            if frame.id() == id.into() {
+                break frame;
+            }
+        };
+
+        if frame.data().len() != 8 {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                format!("Frame data length invalid: {} != 8", frame.data().len()),
+            ));
+        }
+
+        let data = frame.data();
+
+        Ok(Powers {
+            electrical: f32::from_le_bytes([data[0], data[1], data[2], data[3]]),
+            mechanical: f32::from_le_bytes([data[4], data[5], data[6], data[7]]),
+        })
+    }
 }
 
 /// Version information.
@@ -474,4 +505,13 @@ pub struct Torques {
     pub target: f32,
     /// Torque estimate in Nm
     pub estimate: f32,
+}
+
+/// Power values.
+#[derive(Debug, Clone, Copy)]
+pub struct Powers {
+    /// Electrical power in watts
+    pub electrical: f32,
+    /// Mechanical power in watts
+    pub mechanical: f32,
 }

@@ -37,5 +37,9 @@ async fn main() -> io::Result<()> {
     let torques = odrive.get_torques().await?;
     println!("{:?}", torques);
 
+    // Power values
+    let powers = odrive.get_powers().await?;
+    println!("{:?}", powers);
+
     Ok(())
 }
