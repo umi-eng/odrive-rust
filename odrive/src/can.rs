@@ -99,6 +99,37 @@ impl ODrive {
         self.interface.write_frame(frame).await
     }
 
+    /// Get the encoder estimates.
+    pub async fn get_encoder_estimates(&self) -> io::Result<EncoderEstimates> {
+        let id = Id::new(self.axis, 0x03);
+
+        // request the message with an rtr frame
+        self.interface
+            .write_frame(CanFrame::new_remote(id, 0).unwrap())
+            .await?;
+
+        let frame = loop {
+            let frame = self.interface.read_frame().await?;
+            if frame.id() == id.into() {
+                break frame;
+            }
+        };
+
+        if frame.data().len() != 8 {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                format!("Frame data length invalid: {} != 8", frame.data().len()),
+            ));
+        }
+
+        let data = frame.data();
+
+        Ok(EncoderEstimates {
+            position: f32::from_le_bytes([data[0], data[1], data[2], data[3]]),
+            velocity: f32::from_le_bytes([data[4], data[5], data[6], data[7]]),
+        })
+    }
+
     /// Set the control loop mode.
     pub async fn set_controller_mode(
         &self,
@@ -280,4 +311,13 @@ pub struct Version {
 pub struct Error {
     pub active_errors: AxisErrors,
     pub disarm_reason: AxisErrors,
+}
+
+/// Encoder estimates.
+#[derive(Debug, Clone, Copy)]
+pub struct EncoderEstimates {
+    /// Position estimate in revolutions
+    pub position: f32,
+    /// Velocity estimate in rev/s
+    pub velocity: f32,
 }

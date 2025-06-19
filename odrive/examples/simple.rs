@@ -17,5 +17,9 @@ async fn main() -> io::Result<()> {
     let errors = odrive.get_error().await?;
     println!("{:?}", errors);
 
+    // Get position estiimate
+    let estimates = odrive.get_encoder_estimates().await?;
+    println!("{:?}", estimates);
+
     Ok(())
 }
