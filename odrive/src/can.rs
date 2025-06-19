@@ -268,6 +268,37 @@ impl ODrive {
         ))
     }
 
+    /// Get temperature.
+    pub async fn get_temperature(&self) -> io::Result<Temperature> {
+        let id = Id::new(self.axis, 0x15);
+
+        // request the message with an rtr frame
+        self.interface
+            .write_frame(CanFrame::new_remote(id, 0).unwrap())
+            .await?;
+
+        let frame = loop {
+            let frame = self.interface.read_frame().await?;
+            if frame.id() == id.into() {
+                break frame;
+            }
+        };
+
+        if frame.data().len() != 8 {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                format!("Frame data length invalid: {} != 8", frame.data().len()),
+            ));
+        }
+
+        let data = frame.data();
+
+        Ok(Temperature {
+            fet: f32::from_le_bytes([data[0], data[1], data[2], data[3]]),
+            motor: f32::from_le_bytes([data[4], data[5], data[6], data[7]]),
+        })
+    }
+
     /// Reboot the device.
     pub async fn reboot(&self) -> io::Result<()> {
         let frame = CanFrame::new(Id::new(self.axis, 0x16), &[0]).unwrap();
@@ -354,4 +385,13 @@ pub struct EncoderEstimates {
     pub position: f32,
     /// Velocity estimate in rev/s
     pub velocity: f32,
+}
+
+/// Temperature message.
+#[derive(Debug, Clone, Copy)]
+pub struct Temperature {
+    /// FET temperature
+    pub fet: f32,
+    /// Motor temperature
+    pub motor: f32,
 }

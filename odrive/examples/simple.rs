@@ -25,5 +25,9 @@ async fn main() -> io::Result<()> {
     let iq = odrive.get_iq().await?;
     println!("{:?}", iq);
 
+    // Temperature readings
+    let temp = odrive.get_temperature().await?;
+    println!("{:?}", temp);
+
     Ok(())
 }
