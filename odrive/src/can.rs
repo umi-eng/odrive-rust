@@ -24,7 +24,7 @@ impl ODrive {
 
         // request the message with an rtr frame
         self.interface
-            .write_frame(CanFrame::new_remote(id, 8).unwrap())
+            .write_frame(CanFrame::new_remote(id, 0).unwrap())
             .await?;
 
         let frame = loop {
