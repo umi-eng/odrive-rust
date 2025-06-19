@@ -59,6 +59,7 @@ impl ODrive {
         self.interface.write_frame(frame).await
     }
 
+    /// Get errors.
     pub async fn get_error(&self) -> io::Result<Error> {
         let id = Id::new(self.axis, 0x03);
 
