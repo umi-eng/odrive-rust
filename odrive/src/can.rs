@@ -305,6 +305,37 @@ impl ODrive {
         self.interface.write_frame(frame).await
     }
 
+    /// Get bus voltage and current.
+    pub async fn get_bus_voltage_current(&self) -> io::Result<BusVoltageCurrent> {
+        let id = Id::new(self.axis, 0x15);
+
+        // request the message with an rtr frame
+        self.interface
+            .write_frame(CanFrame::new_remote(id, 0).unwrap())
+            .await?;
+
+        let frame = loop {
+            let frame = self.interface.read_frame().await?;
+            if frame.id() == id.into() {
+                break frame;
+            }
+        };
+
+        if frame.data().len() != 8 {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                format!("Frame data length invalid: {} != 8", frame.data().len()),
+            ));
+        }
+
+        let data = frame.data();
+
+        Ok(BusVoltageCurrent {
+            voltage: f32::from_le_bytes([data[0], data[1], data[2], data[3]]),
+            current: f32::from_le_bytes([data[4], data[5], data[6], data[7]]),
+        })
+    }
+
     /// Save configuration.
     pub async fn save_configuration(&self) -> io::Result<()> {
         let frame = CanFrame::new(Id::new(self.axis, 0x16), &[1]).unwrap();
@@ -394,4 +425,13 @@ pub struct Temperature {
     pub fet: f32,
     /// Motor temperature
     pub motor: f32,
+}
+
+/// Bus voltage and current.
+#[derive(Debug, Clone, Copy)]
+pub struct BusVoltageCurrent {
+    /// Bus voltage in volts
+    pub voltage: f32,
+    /// Bus current in amps
+    pub current: f32,
 }

@@ -29,5 +29,9 @@ async fn main() -> io::Result<()> {
     let temp = odrive.get_temperature().await?;
     println!("{:?}", temp);
 
+    // Bus voltage and current
+    let bus = odrive.get_bus_voltage_current().await?;
+    println!("{:?}", bus);
+
     Ok(())
 }
