@@ -102,7 +102,7 @@ impl ODrive {
 
     /// Get the encoder estimates.
     pub async fn get_encoder_estimates(&self) -> io::Result<EncoderEstimates> {
-        let id = Id::new(self.axis, 0x03);
+        let id = Id::new(self.axis, 0x09);
 
         // request the message with an rtr frame
         self.interface
