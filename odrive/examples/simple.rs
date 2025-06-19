@@ -13,5 +13,9 @@ async fn main() -> io::Result<()> {
     let version = odrive.get_version().await?;
     println!("{:?}", version);
 
+    // Get any active errors
+    let errors = odrive.get_error().await?;
+    println!("{:?}", errors);
+
     Ok(())
 }
