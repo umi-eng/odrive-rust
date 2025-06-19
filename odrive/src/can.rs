@@ -387,6 +387,37 @@ impl ODrive {
         let frame = CanFrame::new(Id::new(self.axis, 0x1b), &data).unwrap();
         self.interface.write_frame(frame).await
     }
+
+    /// Get torque values.
+    pub async fn get_torques(&self) -> io::Result<Torques> {
+        let id = Id::new(self.axis, 0x1c);
+
+        // request the message with an rtr frame
+        self.interface
+            .write_frame(CanFrame::new_remote(id, 0).unwrap())
+            .await?;
+
+        let frame = loop {
+            let frame = self.interface.read_frame().await?;
+            if frame.id() == id.into() {
+                break frame;
+            }
+        };
+
+        if frame.data().len() != 8 {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                format!("Frame data length invalid: {} != 8", frame.data().len()),
+            ));
+        }
+
+        let data = frame.data();
+
+        Ok(Torques {
+            target: f32::from_le_bytes([data[0], data[1], data[2], data[3]]),
+            estimate: f32::from_le_bytes([data[4], data[5], data[6], data[7]]),
+        })
+    }
 }
 
 /// Version information.
@@ -434,4 +465,13 @@ pub struct BusVoltageCurrent {
     pub voltage: f32,
     /// Bus current in amps
     pub current: f32,
+}
+
+/// Torque values
+#[derive(Debug, Clone, Copy)]
+pub struct Torques {
+    /// Torque target in Nm
+    pub target: f32,
+    /// Torque estimate in Nm
+    pub estimate: f32,
 }

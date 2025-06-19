@@ -33,5 +33,9 @@ async fn main() -> io::Result<()> {
     let bus = odrive.get_bus_voltage_current().await?;
     println!("{:?}", bus);
 
+    // Torque values
+    let torques = odrive.get_torques().await?;
+    println!("{:?}", torques);
+
     Ok(())
 }
