@@ -6,7 +6,7 @@ bitflags! {
     /// Axis error.
     ///
     /// [Reference](https://docs.odriverobotics.com/v/latest/fibre_types/com_odriverobotics_ODrive.html#ODrive.Error)
-    #[derive(Debug, Clone, Copy)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub struct AxisErrors: u32 {
         const INITIALIZING = 0x1;
         const SYSTEM_LEVEL = 0x2;

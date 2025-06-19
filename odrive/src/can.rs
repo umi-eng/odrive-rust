@@ -1,4 +1,4 @@
-use crate::{AxisState, ControlMode, InputMode};
+use crate::{AxisErrors, AxisState, ControlMode, InputMode};
 use cansimple::Id;
 use embedded_can::Frame;
 use socketcan::{CanFrame, tokio::CanSocket};
@@ -57,6 +57,40 @@ impl ODrive {
     pub async fn estop(&self) -> io::Result<()> {
         let frame = CanFrame::new(Id::new(self.axis, 0x02), &[]).unwrap();
         self.interface.write_frame(frame).await
+    }
+
+    pub async fn get_error(&self) -> io::Result<Error> {
+        let id = Id::new(self.axis, 0x03);
+
+        // request the message with an rtr frame
+        self.interface
+            .write_frame(CanFrame::new_remote(id, 0).unwrap())
+            .await?;
+
+        let frame = loop {
+            let frame = self.interface.read_frame().await?;
+            if frame.id() == id.into() {
+                break frame;
+            }
+        };
+
+        if frame.data().len() != 8 {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                format!("Frame data length invalid: {} != 8", frame.data().len()),
+            ));
+        }
+
+        let data = frame.data();
+
+        Ok(Error {
+            active_errors: AxisErrors::from_bits_truncate(u32::from_le_bytes([
+                data[0], data[1], data[2], data[3],
+            ])),
+            disarm_reason: AxisErrors::from_bits_truncate(u32::from_le_bytes([
+                data[4], data[5], data[6], data[7],
+            ])),
+        })
     }
 
     /// Change the axis state.
@@ -239,4 +273,11 @@ pub struct Version {
     pub fw_version_minor: u8,
     pub fw_version_revision: u8,
     pub fw_version_unreleased: bool,
+}
+
+/// Error message.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Error {
+    pub active_errors: AxisErrors,
+    pub disarm_reason: AxisErrors,
 }
