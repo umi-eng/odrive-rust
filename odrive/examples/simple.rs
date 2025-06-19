@@ -21,5 +21,9 @@ async fn main() -> io::Result<()> {
     let estimates = odrive.get_encoder_estimates().await?;
     println!("{:?}", estimates);
 
+    // Get motor current
+    let iq = odrive.get_iq().await?;
+    println!("{:?}", iq);
+
     Ok(())
 }
