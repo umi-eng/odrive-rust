@@ -20,7 +20,7 @@ impl ODrive {
 
     /// Get version information.
     pub async fn get_version(&self) -> io::Result<Version> {
-        let id = Id::new(self.axis, 0x00);
+        let id = Id::new(self.axis, 0x00).unwrap();
 
         // request the message with an rtr frame
         self.interface
@@ -55,13 +55,13 @@ impl ODrive {
 
     /// Cause the axis to disarm.
     pub async fn estop(&self) -> io::Result<()> {
-        let frame = CanFrame::new(Id::new(self.axis, 0x02), &[]).unwrap();
+        let frame = CanFrame::new(Id::new(self.axis, 0x02).unwrap(), &[]).unwrap();
         self.interface.write_frame(frame).await
     }
 
     /// Get errors.
     pub async fn get_error(&self) -> io::Result<Error> {
-        let id = Id::new(self.axis, 0x03);
+        let id = Id::new(self.axis, 0x03).unwrap();
 
         // request the message with an rtr frame
         self.interface
@@ -96,13 +96,17 @@ impl ODrive {
 
     /// Change the axis state.
     pub async fn set_axis_state(&self, state: AxisState) -> io::Result<()> {
-        let frame = CanFrame::new(Id::new(self.axis, 0x07), &(state as u32).to_le_bytes()).unwrap();
+        let frame = CanFrame::new(
+            Id::new(self.axis, 0x07).unwrap(),
+            &(state as u32).to_le_bytes(),
+        )
+        .unwrap();
         self.interface.write_frame(frame).await
     }
 
     /// Get the encoder estimates.
     pub async fn get_encoder_estimates(&self) -> io::Result<EncoderEstimates> {
-        let id = Id::new(self.axis, 0x09);
+        let id = Id::new(self.axis, 0x09).unwrap();
 
         // request the message with an rtr frame
         self.interface
@@ -140,7 +144,7 @@ impl ODrive {
         let mut data = vec![];
         data.extend((control_mode as u8).to_le_bytes());
         data.extend((input_mode as u8).to_le_bytes());
-        let frame = CanFrame::new(Id::new(self.axis, 0x0b), &data).unwrap();
+        let frame = CanFrame::new(Id::new(self.axis, 0x0b).unwrap(), &data).unwrap();
         self.interface.write_frame(frame).await
     }
 
@@ -161,7 +165,7 @@ impl ODrive {
         data.extend(position.to_le_bytes());
         data.extend(velocity.to_le_bytes());
         data.extend(torque.to_le_bytes());
-        let frame = CanFrame::new(Id::new(self.axis, 0x0c), &data).unwrap();
+        let frame = CanFrame::new(Id::new(self.axis, 0x0c).unwrap(), &data).unwrap();
         self.interface.write_frame(frame).await
     }
 
@@ -173,7 +177,7 @@ impl ODrive {
         let mut data = vec![];
         data.extend(velocity.to_le_bytes());
         data.extend(torque.to_le_bytes());
-        let frame = CanFrame::new(Id::new(self.axis, 0x0d), &data).unwrap();
+        let frame = CanFrame::new(Id::new(self.axis, 0x0d).unwrap(), &data).unwrap();
         self.interface.write_frame(frame).await
     }
 
@@ -183,7 +187,7 @@ impl ODrive {
     pub async fn set_input_torque(&self, torque: f32) -> io::Result<()> {
         let mut data = vec![];
         data.extend(torque.to_le_bytes());
-        let frame = CanFrame::new(Id::new(self.axis, 0x0e), &data).unwrap();
+        let frame = CanFrame::new(Id::new(self.axis, 0x0e).unwrap(), &data).unwrap();
         self.interface.write_frame(frame).await
     }
 
@@ -195,7 +199,7 @@ impl ODrive {
         let mut data = vec![];
         data.extend(velocity.to_le_bytes());
         data.extend(current.to_le_bytes());
-        let frame = CanFrame::new(Id::new(self.axis, 0x0f), &data).unwrap();
+        let frame = CanFrame::new(Id::new(self.axis, 0x0f).unwrap(), &data).unwrap();
         self.interface.write_frame(frame).await
     }
 
@@ -205,7 +209,7 @@ impl ODrive {
     pub async fn set_trajectory_velocity_limit(&self, velocity: f32) -> io::Result<()> {
         let mut data = vec![];
         data.extend(velocity.to_le_bytes());
-        let frame = CanFrame::new(Id::new(self.axis, 0x11), &data).unwrap();
+        let frame = CanFrame::new(Id::new(self.axis, 0x11).unwrap(), &data).unwrap();
         self.interface.write_frame(frame).await
     }
 
@@ -221,7 +225,7 @@ impl ODrive {
         let mut data = vec![];
         data.extend(acceleration.to_le_bytes());
         data.extend(deceleration.to_le_bytes());
-        let frame = CanFrame::new(Id::new(self.axis, 0x12), &data).unwrap();
+        let frame = CanFrame::new(Id::new(self.axis, 0x12).unwrap(), &data).unwrap();
         self.interface.write_frame(frame).await
     }
 
@@ -231,7 +235,7 @@ impl ODrive {
     pub async fn set_trajectory_inertia(&self, inertia: f32) -> io::Result<()> {
         let mut data = vec![];
         data.extend(inertia.to_le_bytes());
-        let frame = CanFrame::new(Id::new(self.axis, 0x13), &data).unwrap();
+        let frame = CanFrame::new(Id::new(self.axis, 0x13).unwrap(), &data).unwrap();
         self.interface.write_frame(frame).await
     }
 
@@ -239,7 +243,7 @@ impl ODrive {
     ///
     /// Response: (setpoint, measured)
     pub async fn get_iq(&self) -> io::Result<(f32, f32)> {
-        let id = Id::new(self.axis, 0x14);
+        let id = Id::new(self.axis, 0x14).unwrap();
 
         // request the message with an rtr frame
         self.interface
@@ -270,7 +274,7 @@ impl ODrive {
 
     /// Get temperature.
     pub async fn get_temperature(&self) -> io::Result<Temperature> {
-        let id = Id::new(self.axis, 0x15);
+        let id = Id::new(self.axis, 0x15).unwrap();
 
         // request the message with an rtr frame
         self.interface
@@ -301,13 +305,13 @@ impl ODrive {
 
     /// Reboot the device.
     pub async fn reboot(&self) -> io::Result<()> {
-        let frame = CanFrame::new(Id::new(self.axis, 0x16), &[0]).unwrap();
+        let frame = CanFrame::new(Id::new(self.axis, 0x16).unwrap(), &[0]).unwrap();
         self.interface.write_frame(frame).await
     }
 
     /// Get bus voltage and current.
     pub async fn get_bus_voltage_current(&self) -> io::Result<BusVoltageCurrent> {
-        let id = Id::new(self.axis, 0x17);
+        let id = Id::new(self.axis, 0x17).unwrap();
 
         // request the message with an rtr frame
         self.interface
@@ -338,25 +342,25 @@ impl ODrive {
 
     /// Save configuration.
     pub async fn save_configuration(&self) -> io::Result<()> {
-        let frame = CanFrame::new(Id::new(self.axis, 0x16), &[1]).unwrap();
+        let frame = CanFrame::new(Id::new(self.axis, 0x16).unwrap(), &[1]).unwrap();
         self.interface.write_frame(frame).await
     }
 
     /// Erase configuration.
     pub async fn erase_configuration(&self) -> io::Result<()> {
-        let frame = CanFrame::new(Id::new(self.axis, 0x16), &[2]).unwrap();
+        let frame = CanFrame::new(Id::new(self.axis, 0x16).unwrap(), &[2]).unwrap();
         self.interface.write_frame(frame).await
     }
 
     /// Enter DFU mode 2.
     pub async fn enter_dfu_mode2(&self) -> io::Result<()> {
-        let frame = CanFrame::new(Id::new(self.axis, 0x16), &[3]).unwrap();
+        let frame = CanFrame::new(Id::new(self.axis, 0x16).unwrap(), &[3]).unwrap();
         self.interface.write_frame(frame).await
     }
 
     /// Clear disarm reason and procedure result.
     pub async fn clear_errors(&self, identify: bool) -> io::Result<()> {
-        let frame = CanFrame::new(Id::new(self.axis, 0x18), &[identify as u8]).unwrap();
+        let frame = CanFrame::new(Id::new(self.axis, 0x18).unwrap(), &[identify as u8]).unwrap();
         self.interface.write_frame(frame).await
     }
 
@@ -364,7 +368,8 @@ impl ODrive {
     ///
     /// - `position` rev.
     pub async fn set_absolute_position(&self, position: f32) -> io::Result<()> {
-        let frame = CanFrame::new(Id::new(self.axis, 0x19), &position.to_le_bytes()).unwrap();
+        let frame =
+            CanFrame::new(Id::new(self.axis, 0x19).unwrap(), &position.to_le_bytes()).unwrap();
         self.interface.write_frame(frame).await
     }
 
@@ -372,7 +377,7 @@ impl ODrive {
     ///
     /// - `gain` (rev/s)/rev.
     pub async fn set_position_gain(&self, gain: f32) -> io::Result<()> {
-        let frame = CanFrame::new(Id::new(self.axis, 0x1a), &gain.to_le_bytes()).unwrap();
+        let frame = CanFrame::new(Id::new(self.axis, 0x1a).unwrap(), &gain.to_le_bytes()).unwrap();
         self.interface.write_frame(frame).await
     }
 
@@ -384,13 +389,13 @@ impl ODrive {
         let mut data = vec![];
         data.extend(gain.to_le_bytes());
         data.extend(integrator_gain.to_le_bytes());
-        let frame = CanFrame::new(Id::new(self.axis, 0x1b), &data).unwrap();
+        let frame = CanFrame::new(Id::new(self.axis, 0x1b).unwrap(), &data).unwrap();
         self.interface.write_frame(frame).await
     }
 
     /// Get torque values.
     pub async fn get_torques(&self) -> io::Result<Torques> {
-        let id = Id::new(self.axis, 0x1c);
+        let id = Id::new(self.axis, 0x1c).unwrap();
 
         // request the message with an rtr frame
         self.interface
@@ -421,7 +426,7 @@ impl ODrive {
 
     /// Get power values.
     pub async fn get_powers(&self) -> io::Result<Powers> {
-        let id = Id::new(self.axis, 0x1d);
+        let id = Id::new(self.axis, 0x1d).unwrap();
 
         // request the message with an rtr frame
         self.interface

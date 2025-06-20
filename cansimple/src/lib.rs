@@ -8,14 +8,18 @@ const ID_MASK: u16 = 0x7FF;
 pub struct Id(u16);
 
 impl Id {
-    pub fn new(node: u8, command: u8) -> Self {
-        assert!(node <= 0b111111);
-        assert!(command <= 0b11111);
+    /// Creates a new cansimple identifier.
+    ///
+    /// Will return [`None`] if `node` is > 63 or `command` is > 31.
+    pub fn new(node: u8, command: u8) -> Option<Self> {
+        if node <= 0b111111 && command <= 0b11111 {
+            let node = node as u16;
+            let command = command as u16;
 
-        let node = node as u16;
-        let command = command as u16;
-
-        Self((node << 5) | command)
+            Some(Self((node << 5) | command))
+        } else {
+            None
+        }
     }
 
     /// Create a new ['Id'] from a raw identifier value.
@@ -73,7 +77,7 @@ mod tests {
 
     #[test]
     fn make_identifier() {
-        let id = Id::new(1, 9);
+        let id = Id::new(1, 9).unwrap();
         assert_eq!(id.as_raw(), 0x029);
     }
 }
