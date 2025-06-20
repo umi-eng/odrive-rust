@@ -1,5 +1,7 @@
 //! # CAN interface for ODrives
 
+#[cfg(feature = "flat-endpoints")]
+use crate::flat_endpoints::FlatEndpoints;
 use crate::{AxisErrors, AxisState, ControlMode, InputMode};
 use cansimple::Id;
 use embedded_can::Frame;
@@ -520,6 +522,40 @@ impl ODrive {
             mechanical: f32::from_le_bytes([data[4], data[5], data[6], data[7]]),
         })
     }
+
+    #[cfg(feature = "flat-endpoints")]
+    pub async fn apply_configuration(
+        &self,
+        endpoints: &FlatEndpoints,
+        config: &serde_json::Value,
+    ) -> io::Result<()> {
+        let Some(items) = config.as_object() else {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "Expected object",
+            ));
+        };
+
+        for (key, value) in items.iter() {
+            let Some((id, kind)) = endpoints.get(key) else {
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidInput,
+                    "Configuration endpoint not found in flat endpoints",
+                ));
+            };
+
+            let Some(value) = Value::try_from_json(value, kind) else {
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidInput,
+                    "Configuration value not able to be converted into an SDO value",
+                ));
+            };
+
+            self.sdo_write(id as u16, value).await?;
+        }
+
+        Ok(())
+    }
 }
 
 /// Version information.
@@ -619,16 +655,20 @@ impl Value {
         }
     }
 
-    pub fn kind(&self) -> ValueKind {
-        match self {
-            Self::Bool(_) => ValueKind::Bool,
-            Self::U8(_) => ValueKind::U8,
-            Self::I8(_) => ValueKind::I8,
-            Self::U16(_) => ValueKind::U16,
-            Self::I16(_) => ValueKind::I16,
-            Self::U32(_) => ValueKind::U32,
-            Self::I32(_) => ValueKind::I32,
-            Self::Float(_) => ValueKind::Float,
+    #[cfg(feature = "flat-endpoints")]
+    pub fn try_from_json(value: &serde_json::Value, kind: ValueKind) -> Option<Self> {
+        match kind {
+            ValueKind::Bool => value.as_bool().map(|b| Self::Bool(b)),
+            ValueKind::U8 => value.as_u64().map(|b| Self::U8(b as u8)),
+            ValueKind::I8 => value.as_i64().map(|b| Self::I8(b as i8)),
+            ValueKind::U16 => value.as_u64().map(|b| Self::U16(b as u16)),
+            ValueKind::I16 => value.as_i64().map(|b| Self::I16(b as i16)),
+            ValueKind::U32 => value.as_u64().map(|b| Self::U32(b as u32)),
+            ValueKind::I32 => value.as_i64().map(|b| Self::I32(b as i32)),
+            ValueKind::Float => value
+                .as_number()
+                .and_then(|n| n.as_f64())
+                .map(|f| Self::Float(f as f32)),
         }
     }
 }
@@ -676,5 +716,18 @@ mod tests {
     fn value_to_bytes() {
         let value = Value::Float(1.234);
         assert_eq!(value.to_le_bytes(), [0xb6, 0xf3, 0x9d, 0x3f]);
+    }
+
+    #[test]
+    #[cfg(feature = "flat-endpoints")]
+    fn value_from_json() {
+        Value::try_from_json(&serde_json::json!(true), ValueKind::Bool).unwrap();
+        Value::try_from_json(&serde_json::json!(13), ValueKind::U8).unwrap();
+        Value::try_from_json(&serde_json::json!(-13), ValueKind::I8).unwrap();
+        Value::try_from_json(&serde_json::json!(13), ValueKind::U16).unwrap();
+        Value::try_from_json(&serde_json::json!(-13), ValueKind::I16).unwrap();
+        Value::try_from_json(&serde_json::json!(13), ValueKind::U32).unwrap();
+        Value::try_from_json(&serde_json::json!(-13), ValueKind::I32).unwrap();
+        Value::try_from_json(&serde_json::json!(0.0), ValueKind::Float).unwrap();
     }
 }
