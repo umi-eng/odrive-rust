@@ -132,7 +132,14 @@ impl ODrive {
             }
         };
 
-        let data = frame.data();
+        if frame.data().len() != 8 {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                format!("Frame data length invalid: {} != 8", frame.data().len()),
+            ));
+        }
+
+        let data = frame.data()[4..8];
 
         Ok(match kind {
             ValueKind::Bool => Value::Bool(data[0] == 1),
