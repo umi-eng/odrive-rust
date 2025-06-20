@@ -139,7 +139,7 @@ impl ODrive {
             ));
         }
 
-        let data = frame.data()[4..8];
+        let data = &frame.data()[4..8];
 
         Ok(match kind {
             ValueKind::Bool => Value::Bool(data[0] == 1),
