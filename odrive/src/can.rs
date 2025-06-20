@@ -85,10 +85,10 @@ impl ODrive {
         let data = frame.data();
 
         Ok(Error {
-            active_errors: AxisErrors::from_bits_truncate(u32::from_le_bytes([
+            active_errors: AxisErrors::from_bits_retain(u32::from_le_bytes([
                 data[0], data[1], data[2], data[3],
             ])),
-            disarm_reason: AxisErrors::from_bits_truncate(u32::from_le_bytes([
+            disarm_reason: AxisErrors::from_bits_retain(u32::from_le_bytes([
                 data[4], data[5], data[6], data[7],
             ])),
         })

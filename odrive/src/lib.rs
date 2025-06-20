@@ -30,6 +30,7 @@ bitflags! {
         const BRAKE_RESISTOR_DISARMED = 0x8000000;
         const THERMISTOR_DISCONNECTED = 0x10000000;
         const CALIBRATION_ERROR = 0x40000000;
+        const _ = !0; // the source may set any flags
     }
 }
 
