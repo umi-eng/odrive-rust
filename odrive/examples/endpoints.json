@@ -77,6 +77,46 @@
       "id": 15,
       "type": "uint32",
       "access": "r"
+    },
+    "can.error": {
+      "id": 110,
+      "type": "uint8",
+      "access": "rw"
+    },
+    "can.n_restarts": {
+      "id": 111,
+      "type": "uint32",
+      "access": "rw"
+    },
+    "can.n_rx": {
+      "id": 112,
+      "type": "uint32",
+      "access": "rw"
+    },
+    "can.effective_baudrate": {
+      "id": 113,
+      "type": "uint32",
+      "access": "rw"
+    },
+    "can.config.baud_rate": {
+      "id": 114,
+      "type": "uint32",
+      "access": "rw"
+    },
+    "can.config.data_baud_rate": {
+      "id": 115,
+      "type": "uint32",
+      "access": "rw"
+    },
+    "can.config.tx_brs": {
+      "id": 116,
+      "type": "uint32",
+      "access": "rw"
+    },
+    "can.config.protocol": {
+      "id": 117,
+      "type": "uint8",
+      "access": "rw"
     }
   }
 }
