@@ -472,7 +472,9 @@ pub struct Version {
 /// Error message.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Error {
+    /// Active errors
     pub active_errors: AxisErrors,
+    /// Reason for disarm
     pub disarm_reason: AxisErrors,
 }
 
