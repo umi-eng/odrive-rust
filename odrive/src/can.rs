@@ -147,8 +147,11 @@ impl ODrive {
         Ok(match kind {
             ValueKind::Bool => Value::Bool(data[0] == 1),
             ValueKind::U8 => Value::U8(data[0]),
+            ValueKind::I8 => Value::I8(i8::from_le_bytes([data[0]])),
             ValueKind::U16 => Value::U16(u16::from_le_bytes([data[0], data[1]])),
+            ValueKind::I16 => Value::I16(i16::from_le_bytes([data[0], data[1]])),
             ValueKind::U32 => Value::U32(u32::from_le_bytes([data[0], data[1], data[2], data[3]])),
+            ValueKind::I32 => Value::I32(i32::from_le_bytes([data[0], data[1], data[2], data[3]])),
             ValueKind::Float => {
                 Value::Float(f32::from_le_bytes([data[0], data[1], data[2], data[3]]))
             }
@@ -589,21 +592,27 @@ pub struct Power {
 pub enum Value {
     Bool(bool),
     U8(u8),
+    I8(i8),
     U16(u16),
+    I16(i16),
     U32(u32),
+    I32(i32),
     Float(f32),
 }
 
 impl Value {
+    /// Convert to a const length slice.
+    ///
+    /// Any unused bytes will be zero.
     pub fn to_le_bytes(&self) -> [u8; 4] {
         match *self {
             Self::Bool(b) => [b as u8, 0, 0, 0],
             Self::U8(u) => [u, 0, 0, 0],
-            Self::U16(u) => {
-                let u = u.to_le_bytes();
-                [u[0], u[1], 0, 0]
-            }
+            Self::I8(i) => [i.to_le_bytes()[0], 0, 0, 0],
+            Self::U16(u) => [u.to_le_bytes()[0], u.to_le_bytes()[1], 0, 0],
+            Self::I16(i) => [i.to_le_bytes()[0], i.to_le_bytes()[1], 0, 0],
             Self::U32(u) => u.to_le_bytes(),
+            Self::I32(i) => i.to_le_bytes(),
             Self::Float(f) => f.to_le_bytes(),
         }
     }
@@ -614,9 +623,34 @@ impl Value {
 pub enum ValueKind {
     Bool,
     U8,
+    I8,
     U16,
+    I16,
     U32,
+    I32,
     Float,
+}
+
+impl TryFrom<&serde_json::Value> for ValueKind {
+    type Error = ();
+
+    fn try_from(value: &serde_json::Value) -> Result<Self, Self::Error> {
+        let Some(string) = value.as_str() else {
+            return Err(());
+        };
+
+        Ok(match string {
+            "bool" => Self::Bool,
+            "uint8" => Self::U8,
+            "int8" => Self::I8,
+            "uint16" => Self::U16,
+            "int16" => Self::I16,
+            "uint32" => Self::U32,
+            "int32" => Self::I32,
+            "float" => Self::Float,
+            _ => return Err(()),
+        })
+    }
 }
 
 #[cfg(test)]
