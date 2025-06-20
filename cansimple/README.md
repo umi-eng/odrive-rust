@@ -4,7 +4,8 @@ An implementation of the CANSimple protocol mainly used by ODrive products.
 
 ## Features
 
-- `defmt-1` enables `defmt` formatting on relevant types.
+- `defmt-1` enables [`defmt`](https://crates.io/crates/defmt) formatting on
+  relevant types.
 
 ## Overview
 
@@ -31,7 +32,8 @@ let id = cansimple::Id::new(1, 15).unwrap();
 let id = cansimple::Id::from_raw(0x029);
 ```
 
-CANsimple identifers can be converted to and from `embedded_can` identifers.
+CANsimple identifers can be converted to and from
+[`embedded_can`](https://crates.io/crates/embedded-can) identifers.
 
 ```rust
 let id = cansimple::Id::new(1, 15).unwrap();
