@@ -14,6 +14,7 @@ async fn main() -> io::Result<()> {
     let reader = io::BufReader::new(file);
     let endpoints = serde_json::from_reader(reader)?;
     let endpoints = FlatEndpoints::from_json(endpoints).unwrap();
+    println!("Endpoints loaded");
 
     // Our configuration we want to apply
     let config = json!({
@@ -21,6 +22,7 @@ async fn main() -> io::Result<()> {
     });
 
     odrive.apply_configuration(&endpoints, &config).await?;
+    println!("Configuration applied");
 
     Ok(())
 }
