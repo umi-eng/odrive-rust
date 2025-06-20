@@ -1,9 +1,15 @@
+//! An implementation of the CANSimple protocol mainly used by ODrive products.
+//!
+//! The official reference can be found in the ODrive
+//! [documentation](https://docs.odriverobotics.com/v/latest/manual/can-protocol.html#overview).
+
 #![cfg_attr(not(test), no_std)]
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
 /// 11-bit identifier mask.
 const ID_MASK: u16 = 0x7FF;
 
+/// CANsimple identifier.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt-1", derive(defmt::Format))]
 pub struct Id(u16);
