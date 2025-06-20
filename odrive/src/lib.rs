@@ -1,3 +1,5 @@
+#![doc = include_str!("../README.md")]
+
 pub mod can;
 #[cfg(feature = "flat-endpoints")]
 pub mod flat_endpoints;

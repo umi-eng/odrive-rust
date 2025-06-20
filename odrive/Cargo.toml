@@ -18,3 +18,4 @@ flat-endpoints = ["can", "dep:serde_json"]
 
 [dev-dependencies]
 tokio = { version = "1.45.1", features = ["full"] }
+tokio-test = "0.4.4"
