@@ -73,9 +73,6 @@ mod tests {
 
         let endpoints = FlatEndpoints::from_json(input).unwrap();
 
-        assert_eq!(
-            endpoints.from_name("vbus_voltage"),
-            Some((1, ValueKind::Float))
-        );
+        assert_eq!(endpoints.get("vbus_voltage"), Some((1, ValueKind::Float)));
     }
 }
