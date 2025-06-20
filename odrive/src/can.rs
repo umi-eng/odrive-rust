@@ -1,3 +1,5 @@
+//! # CAN interface for ODrives
+
 use crate::{AxisErrors, AxisState, ControlMode, InputMode};
 use cansimple::Id;
 use embedded_can::Frame;
