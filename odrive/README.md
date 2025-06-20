@@ -1,7 +1,7 @@
 # ODrive
 
-This crate provides an interface that host systems can use to interface with
-ODrive devices.
+This crate provides an interface for host systems to interface with ODrive
+devices.
 
 Currently, only the CAN interface is supported. Contributions for other
 interfaces like USB are welcome.
