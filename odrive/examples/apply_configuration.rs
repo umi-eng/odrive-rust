@@ -18,7 +18,7 @@ async fn main() -> io::Result<()> {
 
     // Our configuration we want to apply
     let config = json!({
-        "can.config.protocol": 1,
+        "can.config.protocol": 1, // set to cansimple
     });
 
     odrive.apply_configuration(&endpoints, &config).await?;
