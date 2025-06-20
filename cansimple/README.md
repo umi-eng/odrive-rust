@@ -1,6 +1,6 @@
 # CANSimple
 
-An implementation of the CANSimple protocol mainly used by ODrive products.
+An implementation of the CANSimple identifier scheme mainly used by ODrive products.
 
 ## Features
 
