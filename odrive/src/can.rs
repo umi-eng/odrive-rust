@@ -94,6 +94,57 @@ impl ODrive {
         })
     }
 
+    /// Write an arbitrary parameter.
+    pub async fn sdo_write(&self, endpoint: u16, value: Value) -> io::Result<()> {
+        let id = Id::new(self.axis, 0x04).unwrap();
+
+        let mut data = vec![];
+        data.push(1); // opcode = write
+        data.extend(endpoint.to_le_bytes());
+        data.push(0); // reserved
+        data.extend(value.to_le_bytes());
+
+        self.interface
+            .write_frame(CanFrame::new(id, &data).unwrap())
+            .await
+    }
+
+    /// Read an arbitrary parameter.
+    pub async fn sdo_read(&self, endpoint: u16, kind: ValueKind) -> io::Result<Value> {
+        let id = Id::new(self.axis, 0x04).unwrap();
+
+        let mut data = vec![];
+        data.push(0); // opcode = read
+        data.extend(endpoint.to_le_bytes());
+        data.push(0); // reserved
+        data.extend(0_u32.to_le_bytes());
+
+        self.interface
+            .write_frame(CanFrame::new(id, &data).unwrap())
+            .await?;
+
+        let id = Id::new(self.axis, 0x05).unwrap();
+
+        let frame = loop {
+            let frame = self.interface.read_frame().await?;
+            if frame.id() == id.into() {
+                break frame;
+            }
+        };
+
+        let data = frame.data();
+
+        Ok(match kind {
+            ValueKind::Bool => Value::Bool(data[0] == 1),
+            ValueKind::U8 => Value::U8(data[0]),
+            ValueKind::U16 => Value::U16(u16::from_le_bytes([data[0], data[1]])),
+            ValueKind::U32 => Value::U32(u32::from_le_bytes([data[0], data[1], data[2], data[3]])),
+            ValueKind::Float => {
+                Value::Float(f32::from_le_bytes([data[0], data[1], data[2], data[3]]))
+            }
+        })
+    }
+
     /// Change the axis state.
     pub async fn set_axis_state(&self, state: AxisState) -> io::Result<()> {
         let frame = CanFrame::new(
@@ -521,4 +572,50 @@ pub struct Powers {
     pub electrical: f32,
     /// Mechanical power in watts
     pub mechanical: f32,
+}
+
+/// Arbitrary parameter value.
+#[derive(Debug, Clone, Copy)]
+pub enum Value {
+    Bool(bool),
+    U8(u8),
+    U16(u16),
+    U32(u32),
+    Float(f32),
+}
+
+impl Value {
+    pub fn to_le_bytes(&self) -> [u8; 4] {
+        match *self {
+            Self::Bool(b) => [b as u8, 0, 0, 0],
+            Self::U8(u) => [u, 0, 0, 0],
+            Self::U16(u) => {
+                let u = u.to_le_bytes();
+                [u[0], u[1], 0, 0]
+            }
+            Self::U32(u) => u.to_le_bytes(),
+            Self::Float(f) => f.to_le_bytes(),
+        }
+    }
+}
+
+/// Arbitrary parameter value kind.
+#[derive(Debug, Clone, Copy)]
+pub enum ValueKind {
+    Bool,
+    U8,
+    U16,
+    U32,
+    Float,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn value_to_bytes() {
+        let value = Value::Float(1.234);
+        assert_eq!(value.to_le_bytes(), [0xb6, 0xf3, 0x9d, 0x3f]);
+    }
 }
