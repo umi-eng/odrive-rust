@@ -621,7 +621,7 @@ impl Value {
 }
 
 /// Arbitrary parameter value kind.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ValueKind {
     Bool,
     U8,
