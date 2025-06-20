@@ -2,6 +2,10 @@
 
 An implementation of the CANSimple protocol mainly used by ODrive products.
 
+## Features
+
+- `defmt-1` enables `defmt` formatting on relevant types.
+
 ## Overview
 
 The CANsimple protocol uses only 11-bit identifiers and features a `node` and
