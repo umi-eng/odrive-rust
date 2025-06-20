@@ -1,8 +1,4 @@
-//! An implementation of the CANSimple protocol mainly used by ODrive products.
-//!
-//! The official reference can be found in the ODrive
-//! [documentation](https://docs.odriverobotics.com/v/latest/manual/can-protocol.html#overview).
-
+#![doc = include_str!("../README.md")]
 #![cfg_attr(not(test), no_std)]
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
