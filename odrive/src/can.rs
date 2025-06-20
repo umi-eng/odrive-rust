@@ -128,7 +128,10 @@ impl ODrive {
         let frame = loop {
             let frame = self.interface.read_frame().await?;
             if frame.id() == id.into() {
-                break frame;
+                let rx_endpoint = u16::from_le_bytes([frame.data()[1], frame.data()[2]]);
+                if rx_endpoint == endpoint {
+                    break frame;
+                }
             }
         };
 
