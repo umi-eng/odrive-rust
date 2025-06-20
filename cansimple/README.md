@@ -18,3 +18,22 @@ The CANsimple protocol uses only 11-bit identifiers and features a `node` and
 
 A full explanation can be found in the ODrive
 [documentation](https://docs.odriverobotics.com/v/latest/manual/can-protocol.html#overview).
+
+## Examples
+
+Identifiers can be created from either raw ids or from node and command ids.
+
+```rust
+// From components
+let id = cansimple::Id::new(1, 15).unwrap();
+
+// From raw id
+let id = cansimple::Id::from_raw(0x029);
+```
+
+CANsimple identifers can be converted two and from `embedded_can` identifers.
+
+```rust
+let id = cansimple::Id::new(1, 15).unwrap();
+let embedded_id: embedded_can::Id = id.into();
+```
