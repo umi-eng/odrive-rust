@@ -1,5 +1,6 @@
 [package]
 name = "cansimple"
+description = "An implementation of the CANSimple identifier scheme"
 version = "0.1.0"
 edition = "2024"
 license = "MPL-2.0"
