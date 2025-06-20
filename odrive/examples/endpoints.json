@@ -1,0 +1,82 @@
+{
+  "fw_version": "0.6.11-1",
+  "hw_version": "4.4.58",
+  "crc": 55416,
+  "endpoints": {
+    "vbus_voltage": {
+      "id": 1,
+      "type": "float",
+      "access": "r"
+    },
+    "ibus": {
+      "id": 2,
+      "type": "float",
+      "access": "r"
+    },
+    "ibus_report_filter_k": {
+      "id": 3,
+      "type": "float",
+      "access": "rw"
+    },
+    "control_loop_hz": {
+      "id": 4,
+      "type": "uint32",
+      "access": "r"
+    },
+    "serial_number": {
+      "id": 5,
+      "type": "uint64",
+      "access": "r"
+    },
+    "hw_version_major": {
+      "id": 6,
+      "type": "uint8",
+      "access": "r"
+    },
+    "hw_version_minor": {
+      "id": 7,
+      "type": "uint8",
+      "access": "r"
+    },
+    "hw_version_variant": {
+      "id": 8,
+      "type": "uint8",
+      "access": "r"
+    },
+    "hw_version_revision": {
+      "id": 9,
+      "type": "uint8",
+      "access": "r"
+    },
+    "fw_version_major": {
+      "id": 10,
+      "type": "uint8",
+      "access": "r"
+    },
+    "fw_version_minor": {
+      "id": 11,
+      "type": "uint8",
+      "access": "r"
+    },
+    "fw_version_revision": {
+      "id": 12,
+      "type": "uint8",
+      "access": "r"
+    },
+    "commit_hash": {
+      "id": 13,
+      "type": "uint32",
+      "access": "r"
+    },
+    "fw_version_unreleased": {
+      "id": 14,
+      "type": "uint8",
+      "access": "r"
+    },
+    "bootloader_version": {
+      "id": 15,
+      "type": "uint32",
+      "access": "r"
+    }
+  }
+}

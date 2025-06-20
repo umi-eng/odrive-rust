@@ -1,4 +1,6 @@
 pub mod can;
+#[cfg(feature = "flat-endpoints")]
+pub mod flat_endpoints;
 
 use bitflags::bitflags;
 

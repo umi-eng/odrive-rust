@@ -9,10 +9,12 @@ cansimple = "0.1.0"
 bitflags = "2.9.1"
 embedded-can = { version = "0.4.1", optional = true }
 socketcan = { version = "3.5.0", optional = true, features = ["tokio"] }
+serde_json = { version = "1.0.140", optional = true }
 
 [features]
-default = ["can"]
+default = ["can", "flat-endpoints"]
 can = ["dep:embedded-can", "dep:socketcan"]
+flat-endpoints = ["can", "dep:serde_json"]
 
 [dev-dependencies]
 tokio = { version = "1.45.1", features = ["full"] }
