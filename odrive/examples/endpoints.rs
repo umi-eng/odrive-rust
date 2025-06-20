@@ -12,7 +12,7 @@ async fn main() -> io::Result<()> {
     let flat_endpoints = FlatEndpoints::from_json(endpoints).unwrap();
 
     println!("Retrieving endpoint \"bootloader_version\"");
-    let (id, kind) = flat_endpoints.from_name("bootloader_version").unwrap();
+    let (id, kind) = flat_endpoints.get("bootloader_version").unwrap();
     println!("Got id: {}, kind: {:?}", id, kind);
 
     Ok(())

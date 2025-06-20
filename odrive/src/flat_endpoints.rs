@@ -46,7 +46,7 @@ impl FlatEndpoints {
     /// Get a flattened endpoint from its name.
     ///
     /// Returns (id, type).
-    pub fn from_name(&self, name: &str) -> Option<(u64, ValueKind)> {
+    pub fn get(&self, name: &str) -> Option<(u64, ValueKind)> {
         self.0.get(name).copied()
     }
 
