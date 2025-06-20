@@ -163,7 +163,7 @@ impl ODrive {
     }
 
     /// Get the encoder estimates.
-    pub async fn get_encoder_estimates(&self) -> io::Result<EncoderEstimates> {
+    pub async fn get_encoder_estimates(&self) -> io::Result<EncoderEstimate> {
         let id = Id::new(self.axis, 0x09).unwrap();
 
         // request the message with an rtr frame
@@ -187,7 +187,7 @@ impl ODrive {
 
         let data = frame.data();
 
-        Ok(EncoderEstimates {
+        Ok(EncoderEstimate {
             position: f32::from_le_bytes([data[0], data[1], data[2], data[3]]),
             velocity: f32::from_le_bytes([data[4], data[5], data[6], data[7]]),
         })
@@ -452,7 +452,7 @@ impl ODrive {
     }
 
     /// Get torque values.
-    pub async fn get_torques(&self) -> io::Result<Torques> {
+    pub async fn get_torques(&self) -> io::Result<Torque> {
         let id = Id::new(self.axis, 0x1c).unwrap();
 
         // request the message with an rtr frame
@@ -476,14 +476,14 @@ impl ODrive {
 
         let data = frame.data();
 
-        Ok(Torques {
+        Ok(Torque {
             target: f32::from_le_bytes([data[0], data[1], data[2], data[3]]),
             estimate: f32::from_le_bytes([data[4], data[5], data[6], data[7]]),
         })
     }
 
     /// Get power values.
-    pub async fn get_powers(&self) -> io::Result<Powers> {
+    pub async fn get_powers(&self) -> io::Result<Power> {
         let id = Id::new(self.axis, 0x1d).unwrap();
 
         // request the message with an rtr frame
@@ -507,7 +507,7 @@ impl ODrive {
 
         let data = frame.data();
 
-        Ok(Powers {
+        Ok(Power {
             electrical: f32::from_le_bytes([data[0], data[1], data[2], data[3]]),
             mechanical: f32::from_le_bytes([data[4], data[5], data[6], data[7]]),
         })
@@ -538,7 +538,7 @@ pub struct Error {
 
 /// Encoder estimates.
 #[derive(Debug, Clone, Copy)]
-pub struct EncoderEstimates {
+pub struct EncoderEstimate {
     /// Position estimate in revolutions
     pub position: f32,
     /// Velocity estimate in rev/s
@@ -565,7 +565,7 @@ pub struct BusVoltageCurrent {
 
 /// Torque values
 #[derive(Debug, Clone, Copy)]
-pub struct Torques {
+pub struct Torque {
     /// Torque target in Nm
     pub target: f32,
     /// Torque estimate in Nm
@@ -574,7 +574,7 @@ pub struct Torques {
 
 /// Power values.
 #[derive(Debug, Clone, Copy)]
-pub struct Powers {
+pub struct Power {
     /// Electrical power in watts
     pub electrical: f32,
     /// Mechanical power in watts
