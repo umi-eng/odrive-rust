@@ -618,6 +618,19 @@ impl Value {
             Self::Float(f) => f.to_le_bytes(),
         }
     }
+
+    pub fn kind(&self) -> ValueKind {
+        match self {
+            Self::Bool(_) => ValueKind::Bool,
+            Self::U8(_) => ValueKind::U8,
+            Self::I8(_) => ValueKind::I8,
+            Self::U16(_) => ValueKind::U16,
+            Self::I16(_) => ValueKind::I16,
+            Self::U32(_) => ValueKind::U32,
+            Self::I32(_) => ValueKind::I32,
+            Self::Float(_) => ValueKind::Float,
+        }
+    }
 }
 
 /// Arbitrary parameter value kind.
