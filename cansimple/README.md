@@ -1,4 +1,4 @@
-# CANSimple Protocol
+# CANSimple
 
 An implementation of the CANSimple protocol mainly used by ODrive products.
 
