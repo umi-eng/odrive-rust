@@ -31,7 +31,7 @@ let id = cansimple::Id::new(1, 15).unwrap();
 let id = cansimple::Id::from_raw(0x029);
 ```
 
-CANsimple identifers can be converted two and from `embedded_can` identifers.
+CANsimple identifers can be converted to and from `embedded_can` identifers.
 
 ```rust
 let id = cansimple::Id::new(1, 15).unwrap();
