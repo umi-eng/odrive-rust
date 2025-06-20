@@ -11,7 +11,7 @@ An implementation of the CANSimple protocol mainly used by ODrive products.
 The CANsimple protocol uses only 11-bit identifiers and features a `node` and
 `command` components.
 
-```
+```text
 | 11 | 10 | 9 | 8 | 7 | 6 | 5 | 4 | 3 | 2 | 1 |
 | Node ID                     | Command ID    |
 ```
