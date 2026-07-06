@@ -5,6 +5,7 @@
 - Use cansimple dependency from workspace.
 - Only pin serde to minor version.
 - Update bitflags to v2.13.0.
+- Fix length of `set_control_mode` frame.
 
 ## v0.1.0
 

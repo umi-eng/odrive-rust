@@ -210,8 +210,8 @@ impl ODrive {
         input_mode: InputMode,
     ) -> io::Result<()> {
         let mut data = vec![];
-        data.extend((control_mode as u8).to_le_bytes());
-        data.extend((input_mode as u8).to_le_bytes());
+        data.extend((control_mode as u32).to_le_bytes());
+        data.extend((input_mode as u32).to_le_bytes());
         let frame = CanFrame::new(Id::new(self.axis, 0x0b).unwrap(), &data).unwrap();
         self.interface.write_frame(frame).await
     }
