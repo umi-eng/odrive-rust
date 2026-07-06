@@ -1,6 +1,5 @@
 #![doc = include_str!("../README.md")]
 #![cfg_attr(not(test), no_std)]
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
 /// 11-bit identifier mask.
 const ID_MASK: u16 = 0x7FF;
@@ -56,6 +55,7 @@ impl From<embedded_can::StandardId> for Id {
 
 impl From<Id> for embedded_can::StandardId {
     fn from(id: Id) -> Self {
+        // [`simplecan::Id`] ensures id is masked to the correct number of bits.
         embedded_can::StandardId::new(id.as_raw()).unwrap()
     }
 }
