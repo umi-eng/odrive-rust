@@ -6,3 +6,6 @@ repository = "https://github.com/umi-eng/odrive-rust/"
 [workspace]
 resolver = "3"
 members = ["cansimple", "odrive"]
+
+[workspace.dependencies]
+cansimple = { path = "cansimple", version = "0.1.0" }
