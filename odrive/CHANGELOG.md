@@ -8,6 +8,7 @@
 - Fix length of `set_control_mode` frame.
 - Check frame length is correct for `sdo_read` inside response loop.
 - Fix documented unit for `set_input_torque`.
+- Check SDO write id will fit in message id size for `apply_configuration`.
 
 ## v0.1.0
 

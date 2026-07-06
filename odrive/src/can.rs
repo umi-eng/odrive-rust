@@ -547,7 +547,13 @@ impl ODrive {
                 ));
             };
 
-            self.sdo_write(id as u16, value).await?;
+            let endpoint = u16::try_from(id).map_err(|_| {
+                io::Error::new(
+                    io::ErrorKind::InvalidInput,
+                    "Endpoint ID out of range for u16",
+                )
+            })?;
+            self.sdo_write(endpoint, value).await?;
         }
 
         Ok(())
