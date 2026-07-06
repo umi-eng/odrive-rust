@@ -7,7 +7,7 @@ const ID_MASK: u16 = 0x7FF;
 
 /// CANsimple identifier.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "defmt-1", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Id(u16);
 
 impl Id {
