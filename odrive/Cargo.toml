@@ -8,7 +8,7 @@ repository.workspace = true
 
 [dependencies]
 cansimple.workspace = true
-bitflags = "2.9.1"
+bitflags = "2.13.0"
 embedded-can = { version = "0.4.1", optional = true }
 socketcan = { version = "3.5.0", optional = true, features = ["tokio"] }
 serde_json = { version = "1.0", optional = true }
