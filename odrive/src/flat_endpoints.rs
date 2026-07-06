@@ -20,9 +20,7 @@ pub struct FlatEndpoints(HashMap<String, (u64, ValueKind)>);
 
 impl FlatEndpoints {
     pub fn from_json(input: serde_json::Value) -> Option<Self> {
-        let Some(endpoints) = input.get("endpoints").and_then(|ep| ep.as_object()) else {
-            return None;
-        };
+        let endpoints = input.get("endpoints").and_then(|ep| ep.as_object())?;
 
         let mut map = HashMap::new();
 
