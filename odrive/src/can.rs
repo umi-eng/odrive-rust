@@ -247,7 +247,7 @@ impl ODrive {
 
     /// Set input torque.
     ///
-    /// - `torque` amps.
+    /// - `torque` Nm.
     pub async fn set_input_torque(&self, torque: f32) -> io::Result<()> {
         let mut data = vec![];
         data.extend(torque.to_le_bytes());

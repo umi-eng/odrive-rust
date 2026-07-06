@@ -7,6 +7,7 @@
 - Update bitflags to v2.13.0.
 - Fix length of `set_control_mode` frame.
 - Check frame length is correct for `sdo_read` inside response loop.
+- Fix documented unit for `set_input_torque`.
 
 ## v0.1.0
 
