@@ -19,5 +19,5 @@ can = ["dep:embedded-can", "dep:socketcan"]
 flat-endpoints = ["can", "dep:serde_json"]
 
 [dev-dependencies]
-tokio = { version = "1.45.1", features = ["full"] }
-tokio-test = "0.4.4"
+tokio = { version = "1.52.3", features = ["full"] }
+tokio-test = "0.4.5"
