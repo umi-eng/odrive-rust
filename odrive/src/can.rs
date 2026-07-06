@@ -660,7 +660,7 @@ impl Value {
     #[cfg(feature = "flat-endpoints")]
     pub fn try_from_json(value: &serde_json::Value, kind: ValueKind) -> Option<Self> {
         match kind {
-            ValueKind::Bool => value.as_bool().map(|b| Self::Bool(b)),
+            ValueKind::Bool => value.as_bool().map(Self::Bool),
             ValueKind::U8 => value.as_u64().map(|b| Self::U8(b as u8)),
             ValueKind::I8 => value.as_i64().map(|b| Self::I8(b as i8)),
             ValueKind::U16 => value.as_u64().map(|b| Self::U16(b as u16)),
