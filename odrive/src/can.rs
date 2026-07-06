@@ -131,6 +131,9 @@ impl ODrive {
 
         let frame = loop {
             let frame = self.interface.read_frame().await?;
+            if frame.data().len() != 8 {
+                continue;
+            }
             if frame.id() == id.into() {
                 let rx_endpoint = u16::from_le_bytes([frame.data()[1], frame.data()[2]]);
                 if rx_endpoint == endpoint {
@@ -138,13 +141,6 @@ impl ODrive {
                 }
             }
         };
-
-        if frame.data().len() != 8 {
-            return Err(io::Error::new(
-                io::ErrorKind::InvalidData,
-                format!("Frame data length invalid: {} != 8", frame.data().len()),
-            ));
-        }
 
         let data = &frame.data()[4..8];
 
