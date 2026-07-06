@@ -9,6 +9,7 @@
 - Check frame length is correct for `sdo_read` inside response loop.
 - Fix documented unit for `set_input_torque`.
 - Check SDO write id will fit in message id size for `apply_configuration`.
+- Fix typo in function name `set_lmits` -> `set_limits`.
 
 ## v0.1.0
 

@@ -259,7 +259,7 @@ impl ODrive {
     ///
     /// - `velocity` limit rev/s.
     /// - `current` limit amps.
-    pub async fn set_lmits(&self, velocity: f32, current: f32) -> io::Result<()> {
+    pub async fn set_limits(&self, velocity: f32, current: f32) -> io::Result<()> {
         let mut data = vec![];
         data.extend(velocity.to_le_bytes());
         data.extend(current.to_le_bytes());
