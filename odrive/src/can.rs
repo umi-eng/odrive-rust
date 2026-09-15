@@ -385,7 +385,7 @@ impl ODrive {
         self.interface.write_frame(frame).await
     }
 
-    /// Erase configuration.
+    /// Erase the stored configuration.
     pub async fn erase_configuration(&self) -> io::Result<()> {
         let frame = CanFrame::new(Id::new(self.axis, 0x16).unwrap(), &[2]).unwrap();
         self.interface.write_frame(frame).await
