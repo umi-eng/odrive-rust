@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## v0.2.0
+
 - Update bitflags to v2.13.2.
 - Add missing units to doc comments.
 - Add feddback message reader.
