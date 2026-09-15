@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Update bitflags to v2.13.2.
+
 ## v0.1.0
 
 - Initial release.
