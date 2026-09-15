@@ -594,9 +594,9 @@ pub struct EncoderEstimate {
 /// Temperature message.
 #[derive(Debug, Clone, Copy)]
 pub struct Temperature {
-    /// FET temperature
+    /// FET temperature in Celsius
     pub fet: f32,
-    /// Motor temperature
+    /// Motor temperature in Celsius
     pub motor: f32,
 }
 

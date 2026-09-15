@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - Update bitflags to v2.13.2.
+- Add missing units to doc comments.
 
 ## v0.1.0
 
