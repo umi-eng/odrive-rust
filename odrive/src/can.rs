@@ -45,16 +45,7 @@ impl ODrive {
             ));
         }
 
-        Ok(Version {
-            protocol_version: frame.data()[0],
-            hw_version_major: frame.data()[1],
-            hw_version_minor: frame.data()[2],
-            hw_version_variant: frame.data()[3],
-            fw_version_major: frame.data()[4],
-            fw_version_minor: frame.data()[5],
-            fw_version_revision: frame.data()[6],
-            fw_version_unreleased: frame.data()[7] == 1,
-        })
+        Ok(Version::new(frame.data().try_into().unwrap()))
     }
 
     /// Cause the axis to disarm.
@@ -88,14 +79,7 @@ impl ODrive {
 
         let data = frame.data();
 
-        Ok(Error {
-            active_errors: AxisErrors::from_bits_retain(u32::from_le_bytes([
-                data[0], data[1], data[2], data[3],
-            ])),
-            disarm_reason: AxisErrors::from_bits_retain(u32::from_le_bytes([
-                data[4], data[5], data[6], data[7],
-            ])),
-        })
+        Ok(Error::new(data.try_into().unwrap()))
     }
 
     /// Write an arbitrary parameter.
@@ -193,10 +177,7 @@ impl ODrive {
 
         let data = frame.data();
 
-        Ok(EncoderEstimate {
-            position: f32::from_le_bytes([data[0], data[1], data[2], data[3]]),
-            velocity: f32::from_le_bytes([data[4], data[5], data[6], data[7]]),
-        })
+        Ok(EncoderEstimate::new(data.try_into().unwrap()))
     }
 
     /// Set the control loop mode.
@@ -361,10 +342,7 @@ impl ODrive {
 
         let data = frame.data();
 
-        Ok(Temperature {
-            fet: f32::from_le_bytes([data[0], data[1], data[2], data[3]]),
-            motor: f32::from_le_bytes([data[4], data[5], data[6], data[7]]),
-        })
+        Ok(Temperature::new(data.try_into().unwrap()))
     }
 
     /// Reboot the device.
@@ -398,10 +376,7 @@ impl ODrive {
 
         let data = frame.data();
 
-        Ok(BusVoltageCurrent {
-            voltage: f32::from_le_bytes([data[0], data[1], data[2], data[3]]),
-            current: f32::from_le_bytes([data[4], data[5], data[6], data[7]]),
-        })
+        Ok(BusVoltageCurrent::new(data.try_into().unwrap()))
     }
 
     /// Save configuration.
@@ -482,10 +457,7 @@ impl ODrive {
 
         let data = frame.data();
 
-        Ok(Torque {
-            target: f32::from_le_bytes([data[0], data[1], data[2], data[3]]),
-            estimate: f32::from_le_bytes([data[4], data[5], data[6], data[7]]),
-        })
+        Ok(Torque::new(data.try_into().unwrap()))
     }
 
     /// Get power values.
@@ -513,10 +485,7 @@ impl ODrive {
 
         let data = frame.data();
 
-        Ok(Power {
-            electrical: f32::from_le_bytes([data[0], data[1], data[2], data[3]]),
-            mechanical: f32::from_le_bytes([data[4], data[5], data[6], data[7]]),
-        })
+        Ok(Power::new(data.try_into().unwrap()))
     }
 
     #[cfg(feature = "flat-endpoints")]
@@ -560,72 +529,219 @@ impl ODrive {
     }
 }
 
+/// Parses an ODrive feedback frame.
+///
+/// Returns the sending node ID and the decoded message type. Frames with an
+/// extended ID, an invalid payload length, or a command that is not an ODrive
+/// feedback message return `None`.
+pub fn feedback(frame: &impl Frame) -> Option<(u8, Message)> {
+    let id = match frame.id() {
+        embedded_can::Id::Standard(id) => Id::from(id),
+        embedded_can::Id::Extended(_) => return None,
+    };
+
+    let payload = frame.data().try_into().ok()?;
+    let message = match id.command() {
+        0x00 => Message::Version(Version::new(payload)),
+        0x01 => Message::Heartbeat(Heartbeat::new(payload)),
+        0x03 => Message::Error(Error::new(payload)),
+        0x09 => Message::EncoderEstimates(EncoderEstimate::new(payload)),
+        0x14 => Message::Iq(Iq::new(payload)),
+        0x15 => Message::Temperature(Temperature::new(payload)),
+        0x17 => Message::BusVoltageCurrent(BusVoltageCurrent::new(payload)),
+        0x1c => Message::Torque(Torque::new(payload)),
+        0x1d => Message::Power(Power::new(payload)),
+        _ => return None,
+    };
+
+    Some((id.node(), message))
+}
+
+/// A message periodically sent by an ODrive.
+#[derive(Debug, Clone, Copy)]
+pub enum Message {
+    Version(Version),
+    Heartbeat(Heartbeat),
+    Error(Error),
+    EncoderEstimates(EncoderEstimate),
+    Iq(Iq),
+    Temperature(Temperature),
+    BusVoltageCurrent(BusVoltageCurrent),
+    Torque(Torque),
+    Power(Power),
+}
+
+fn float(payload: &[u8; 8], offset: usize) -> f32 {
+    f32::from_le_bytes(payload[offset..offset + 4].try_into().unwrap())
+}
+
 /// Version information.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Version {
-    pub protocol_version: u8,
-    pub hw_version_major: u8,
-    pub hw_version_minor: u8,
-    pub hw_version_variant: u8,
-    pub fw_version_major: u8,
-    pub fw_version_minor: u8,
-    pub fw_version_revision: u8,
-    pub fw_version_unreleased: bool,
+    payload: [u8; 8],
+}
+
+impl Version {
+    fn new(payload: [u8; 8]) -> Self {
+        Self { payload }
+    }
+    /// Returns the CAN protocol version reported by the ODrive.
+    pub fn protocol_version(&self) -> u8 {
+        self.payload[0]
+    }
+
+    /// Returns the hardware major version.
+    pub fn hw_version_major(&self) -> u8 {
+        self.payload[1]
+    }
+
+    /// Returns the hardware minor version.
+    pub fn hw_version_minor(&self) -> u8 {
+        self.payload[2]
+    }
+
+    /// Returns the hardware variant.
+    pub fn hw_version_variant(&self) -> u8 {
+        self.payload[3]
+    }
+
+    /// Returns the firmware major version.
+    pub fn fw_version_major(&self) -> u8 {
+        self.payload[4]
+    }
+
+    /// Returns the firmware minor version.
+    pub fn fw_version_minor(&self) -> u8 {
+        self.payload[5]
+    }
+
+    /// Returns the firmware revision.
+    pub fn fw_version_revision(&self) -> u8 {
+        self.payload[6]
+    }
+
+    /// Returns whether the firmware is marked as unreleased.
+    pub fn fw_version_unreleased(&self) -> bool {
+        self.payload[7] == 1
+    }
+}
+
+/// Heartbeat status.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Heartbeat {
+    payload: [u8; 8],
+}
+
+impl Heartbeat {
+    fn new(payload: [u8; 8]) -> Self {
+        Self { payload }
+    }
+    /// Returns the active axis error flags.
+    pub fn axis_error(&self) -> AxisErrors {
+        AxisErrors::from_bits_retain(u32::from_le_bytes(self.payload[0..4].try_into().unwrap()))
+    }
+
+    /// Returns the current axis state value.
+    pub fn axis_state(&self) -> u8 {
+        self.payload[4]
+    }
+
+    /// Returns the procedure result value.
+    pub fn procedure_result(&self) -> u8 {
+        self.payload[5]
+    }
+
+    /// Returns whether the current trajectory is complete.
+    pub fn trajectory_done(&self) -> bool {
+        self.payload[6] != 0
+    }
 }
 
 /// Error message.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Error {
-    /// Active errors
-    pub active_errors: AxisErrors,
-    /// Reason for disarm
-    pub disarm_reason: AxisErrors,
+    payload: [u8; 8],
 }
 
-/// Encoder estimates.
-#[derive(Debug, Clone, Copy)]
-pub struct EncoderEstimate {
-    /// Position estimate in revolutions
-    pub position: f32,
-    /// Velocity estimate in rev/s
-    pub velocity: f32,
+impl Error {
+    fn new(payload: [u8; 8]) -> Self {
+        Self { payload }
+    }
+    /// Returns the currently active axis error flags.
+    pub fn active_errors(&self) -> AxisErrors {
+        AxisErrors::from_bits_retain(u32::from_le_bytes(self.payload[0..4].try_into().unwrap()))
+    }
+
+    /// Returns the error flags that caused the most recent disarm.
+    pub fn disarm_reason(&self) -> AxisErrors {
+        AxisErrors::from_bits_retain(u32::from_le_bytes(self.payload[4..8].try_into().unwrap()))
+    }
 }
 
-/// Temperature message.
-#[derive(Debug, Clone, Copy)]
-pub struct Temperature {
-    /// FET temperature in Celsius
-    pub fet: f32,
-    /// Motor temperature in Celsius
-    pub motor: f32,
+macro_rules! float_pair_message {
+    ($name:ident, $first:ident, $second:ident, $first_doc:literal, $second_doc:literal) => {
+        #[derive(Debug, Clone, Copy)]
+        pub struct $name {
+            payload: [u8; 8],
+        }
+        impl $name {
+            fn new(payload: [u8; 8]) -> Self {
+                Self { payload }
+            }
+            #[doc = $first_doc]
+            pub fn $first(&self) -> f32 {
+                float(&self.payload, 0)
+            }
+            #[doc = $second_doc]
+            pub fn $second(&self) -> f32 {
+                float(&self.payload, 4)
+            }
+        }
+    };
 }
 
-/// Bus voltage and current.
-#[derive(Debug, Clone, Copy)]
-pub struct BusVoltageCurrent {
-    /// Bus voltage in volts
-    pub voltage: f32,
-    /// Bus current in amps
-    pub current: f32,
-}
-
-/// Torque values
-#[derive(Debug, Clone, Copy)]
-pub struct Torque {
-    /// Torque target in Nm
-    pub target: f32,
-    /// Torque estimate in Nm
-    pub estimate: f32,
-}
-
-/// Power values.
-#[derive(Debug, Clone, Copy)]
-pub struct Power {
-    /// Electrical power in watts
-    pub electrical: f32,
-    /// Mechanical power in watts
-    pub mechanical: f32,
-}
+float_pair_message!(
+    EncoderEstimate,
+    position,
+    velocity,
+    "Position estimate in revolutions.",
+    "Velocity estimate in revolutions per second."
+);
+float_pair_message!(
+    Iq,
+    setpoint,
+    measured,
+    "Iq setpoint in amps.",
+    "Measured Iq in amps."
+);
+float_pair_message!(
+    Temperature,
+    fet,
+    motor,
+    "FET temperature in Celsius.",
+    "Motor temperature in Celsius."
+);
+float_pair_message!(
+    BusVoltageCurrent,
+    voltage,
+    current,
+    "Bus voltage in volts.",
+    "Bus current in amps."
+);
+float_pair_message!(
+    Torque,
+    target,
+    estimate,
+    "Torque target in Nm.",
+    "Torque estimate in Nm."
+);
+float_pair_message!(
+    Power,
+    electrical,
+    mechanical,
+    "Electrical power in watts.",
+    "Mechanical power in watts."
+);
 
 /// Arbitrary parameter value.
 #[derive(Debug, Clone, Copy)]
