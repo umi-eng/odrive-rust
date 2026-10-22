@@ -580,7 +580,7 @@ pub struct Version {
 }
 
 impl Version {
-    fn new(payload: [u8; 8]) -> Self {
+    pub(crate) fn new(payload: [u8; 8]) -> Self {
         Self { payload }
     }
     /// Returns the CAN protocol version reported by the ODrive.
