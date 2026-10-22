@@ -28,7 +28,7 @@ Show the bus voltage.
 # let socket = socketcan::tokio::CanSocket::open("can0").unwrap();
 # let odrive = odrive::can::ODrive::new(socket, 1);
 let bus = odrive.get_bus_voltage_current().await.unwrap();
-let voltage = bus.voltage;
+let voltage = bus.voltage();
 println!("Bus voltage is: {}V", voltage);
 # });
 ```
