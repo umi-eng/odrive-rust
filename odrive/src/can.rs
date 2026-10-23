@@ -102,13 +102,32 @@ impl ODrive {
     /// The reply arrives as [`Message::SdoReply`] from [`feedback`], for callers that read
     /// every frame in one place and can't block on a single reply.
     pub async fn sdo_request(&self, endpoint: u16) -> io::Result<()> {
+        self.sdo_read_request(endpoint, 0).await
+    }
+
+    /// Request the ID of the ODrive's endpoint list (its JSON descriptor) without waiting.
+    ///
+    /// The upper 16 bits of the ID are the CRC16 of the JSON, the same value as the `crc` field
+    /// of the `flat_endpoints.json` it was published with, so it identifies the endpoint list
+    /// even between builds that report the same version. The reply arrives as a
+    /// [`Message::SdoReply`] for endpoint 0; read it as [`ValueKind::U32`].
+    ///
+    /// Reading endpoint 0 with `0xFFFFFFFF` in the value field isn't in ODrive's CAN
+    /// documentation. It's what odrivetool sends to identify a device, confirmed on firmware
+    /// 0.6.12: the ID's upper 16 bits matched both the published `crc` and ODrive's documented
+    /// CRC16 over the JSON the device sent.
+    pub async fn request_json_id(&self) -> io::Result<()> {
+        self.sdo_read_request(0, u32::MAX).await
+    }
+
+    async fn sdo_read_request(&self, endpoint: u16, value: u32) -> io::Result<()> {
         let id = Id::new(self.axis, 0x04).unwrap();
 
         let mut data = vec![];
         data.push(0); // opcode = read
         data.extend(endpoint.to_le_bytes());
         data.push(0); // reserved
-        data.extend(0_u32.to_le_bytes());
+        data.extend(value.to_le_bytes());
 
         self.interface
             .write_frame(CanFrame::new(id, &data).unwrap())
@@ -908,6 +927,17 @@ mod tests {
         let reply = SdoReply::new(&[0x00, 0x0c, 0x01, 0x00, 0x01]).unwrap();
         assert_eq!(reply.endpoint(), 268);
         assert!(matches!(reply.value(ValueKind::Bool), Value::Bool(true)));
+    }
+
+    #[test]
+    fn sdo_reply_json_id() {
+        // Reply to request_json_id from an ODrive Pro on firmware 0.6.12
+        let reply = SdoReply::new(&[0x00, 0x00, 0x00, 0x00, 0x04, 0xd8, 0x33, 0x97]).unwrap();
+        assert_eq!(reply.endpoint(), 0);
+        assert!(matches!(
+            reply.value(ValueKind::U32),
+            Value::U32(0x9733_d804)
+        ));
     }
 
     #[test]

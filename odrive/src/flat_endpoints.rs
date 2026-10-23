@@ -9,8 +9,9 @@
 //! file was generated for.** IDs move between releases as endpoints are added,
 //! so a file for another firmware reads and writes the wrong parameters without
 //! any error. Use the file from the exact release flashed on your ODrives, and
-//! check it with [`FlatEndpoints::matches`] against the [`Version`] each ODrive
-//! reports.
+//! check it against each ODrive with [`FlatEndpoints::matches_json_id`], which
+//! compares the endpoint list itself, or at least [`FlatEndpoints::matches`],
+//! which compares the version.
 //!
 //! The `flat_endpoints.json` files can be found on the firmware [downloads
 //! page](https://docs.odriverobotics.com/releases/firmware).
@@ -114,6 +115,16 @@ impl FlatEndpoints {
 
         file_fw == Some(fw.as_str()) && self.hw_version() == Some(hw.as_str())
     }
+
+    /// Whether an ODrive's endpoint list ID (see [`crate::can::ODrive::request_json_id`]) is the
+    /// one this file was published with.
+    ///
+    /// Unlike [`FlatEndpoints::matches`], this tells apart builds that report the same version
+    /// but have different endpoint lists, because it compares the endpoint list itself. A file
+    /// without a `crc` never matches.
+    pub fn matches_json_id(&self, json_id: u32) -> bool {
+        self.crc == Some((json_id >> 16) as u16)
+    }
 }
 
 #[cfg(test)]
@@ -169,6 +180,21 @@ mod tests {
         assert!(file.matches(&matching));
         assert!(!file.matches(&other_firmware));
         assert!(!file.matches(&other_hardware));
+    }
+
+    #[test]
+    fn matches_json_id() {
+        let file = FlatEndpoints::from_json(json!({"crc": 38707, "endpoints": {}})).unwrap();
+
+        // As reported by the published 0.6.12 build, and by another build that also called itself 0.6.12
+        assert!(file.matches_json_id(0x9733_d804));
+        assert!(!file.matches_json_id(0x27b0_c0d5));
+    }
+
+    #[test]
+    fn no_crc_never_matches_json_id() {
+        let file = FlatEndpoints::from_json(json!({"endpoints": {}})).unwrap();
+        assert!(!file.matches_json_id(0x9733_d804));
     }
 
     #[test]
