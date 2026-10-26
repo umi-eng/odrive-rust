@@ -97,49 +97,59 @@ impl ODrive {
             .await
     }
 
-    /// Read an arbitrary parameter.
-    pub async fn sdo_read(&self, endpoint: u16, kind: ValueKind) -> io::Result<Value> {
+    /// Request an arbitrary parameter without waiting for the reply.
+    ///
+    /// The reply arrives as [`Message::SdoReply`] from [`feedback`], for callers that read
+    /// every frame in one place and can't block on a single reply.
+    pub async fn sdo_request(&self, endpoint: u16) -> io::Result<()> {
+        self.sdo_read_request(endpoint, 0).await
+    }
+
+    /// Request the ID of the ODrive's endpoint list (its JSON descriptor) without waiting.
+    ///
+    /// The upper 16 bits of the ID are the CRC16 of the JSON, the same value as the `crc` field
+    /// of the `flat_endpoints.json` it was published with, so it identifies the endpoint list
+    /// even between builds that report the same version. The reply arrives as a
+    /// [`Message::SdoReply`] for endpoint 0; read it as [`ValueKind::U32`].
+    ///
+    /// Reading endpoint 0 with `0xFFFFFFFF` in the value field isn't in ODrive's CAN
+    /// documentation. It's what odrivetool sends to identify a device, confirmed on firmware
+    /// 0.6.12: the ID's upper 16 bits matched both the published `crc` and ODrive's documented
+    /// CRC16 over the JSON the device sent.
+    pub async fn request_json_id(&self) -> io::Result<()> {
+        self.sdo_read_request(0, u32::MAX).await
+    }
+
+    async fn sdo_read_request(&self, endpoint: u16, value: u32) -> io::Result<()> {
         let id = Id::new(self.axis, 0x04).unwrap();
 
         let mut data = vec![];
         data.push(0); // opcode = read
         data.extend(endpoint.to_le_bytes());
         data.push(0); // reserved
-        data.extend(0_u32.to_le_bytes());
+        data.extend(value.to_le_bytes());
 
         self.interface
             .write_frame(CanFrame::new(id, &data).unwrap())
-            .await?;
+            .await
+    }
+
+    /// Read an arbitrary parameter.
+    pub async fn sdo_read(&self, endpoint: u16, kind: ValueKind) -> io::Result<Value> {
+        self.sdo_request(endpoint).await?;
 
         let id = Id::new(self.axis, 0x05).unwrap();
-
-        let frame = loop {
+        loop {
             let frame = self.interface.read_frame().await?;
-            if frame.data().len() != 8 {
+            if frame.id() != id.into() {
                 continue;
             }
-            if frame.id() == id.into() {
-                let rx_endpoint = u16::from_le_bytes([frame.data()[1], frame.data()[2]]);
-                if rx_endpoint == endpoint {
-                    break frame;
-                }
+            if let Some(reply) = SdoReply::new(frame.data())
+                && reply.endpoint() == endpoint
+            {
+                return Ok(reply.value(kind));
             }
-        };
-
-        let data = &frame.data()[4..8];
-
-        Ok(match kind {
-            ValueKind::Bool => Value::Bool(data[0] == 1),
-            ValueKind::U8 => Value::U8(data[0]),
-            ValueKind::I8 => Value::I8(i8::from_le_bytes([data[0]])),
-            ValueKind::U16 => Value::U16(u16::from_le_bytes([data[0], data[1]])),
-            ValueKind::I16 => Value::I16(i16::from_le_bytes([data[0], data[1]])),
-            ValueKind::U32 => Value::U32(u32::from_le_bytes([data[0], data[1], data[2], data[3]])),
-            ValueKind::I32 => Value::I32(i32::from_le_bytes([data[0], data[1], data[2], data[3]])),
-            ValueKind::Float => {
-                Value::Float(f32::from_le_bytes([data[0], data[1], data[2], data[3]]))
-            }
-        })
+        }
     }
 
     /// Change the axis state.
@@ -540,6 +550,12 @@ pub fn feedback(frame: &impl Frame) -> Option<(u8, Message)> {
         embedded_can::Id::Extended(_) => return None,
     };
 
+    // SDO replies are as long as their value, so they're decoded before the fixed-length
+    // conversion the other messages need
+    if id.command() == 0x05 {
+        return SdoReply::new(frame.data()).map(|reply| (id.node(), Message::SdoReply(reply)));
+    }
+
     let payload = frame.data().try_into().ok()?;
     let message = match id.command() {
         0x00 => Message::Version(Version::new(payload)),
@@ -569,6 +585,7 @@ pub enum Message {
     BusVoltageCurrent(BusVoltageCurrent),
     Torque(Torque),
     Power(Power),
+    SdoReply(SdoReply),
 }
 
 fn float(payload: &[u8; 8], offset: usize) -> f32 {
@@ -582,7 +599,7 @@ pub struct Version {
 }
 
 impl Version {
-    fn new(payload: [u8; 8]) -> Self {
+    pub(crate) fn new(payload: [u8; 8]) -> Self {
         Self { payload }
     }
     /// Returns the CAN protocol version reported by the ODrive.
@@ -675,6 +692,53 @@ impl Error {
     /// Returns the error flags that caused the most recent disarm.
     pub fn disarm_reason(&self) -> AxisErrors {
         AxisErrors::from_bits_retain(u32::from_le_bytes(self.payload[4..8].try_into().unwrap()))
+    }
+}
+
+/// Reply to an SDO read (TxSdo).
+///
+/// The ODrive sends only as many value bytes as the endpoint's type needs, for example 1 for a
+/// bool, so a reply can be shorter than 8 bytes.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct SdoReply {
+    endpoint: u16,
+    value: [u8; 4],
+}
+
+impl SdoReply {
+    /// Decodes a TxSdo payload: reserved, endpoint ID (2 bytes), reserved, then up to 4 value
+    /// bytes. Missing value bytes are zero.
+    fn new(data: &[u8]) -> Option<Self> {
+        if data.len() < 4 || data.len() > 8 {
+            return None;
+        }
+        let endpoint = u16::from_le_bytes([data[1], data[2]]);
+        let mut value = [0; 4];
+        value[..data.len() - 4].copy_from_slice(&data[4..]);
+        Some(Self { endpoint, value })
+    }
+
+    /// Returns the endpoint ID this reply is for.
+    pub fn endpoint(&self) -> u16 {
+        self.endpoint
+    }
+
+    /// Returns the value, decoded as `kind`.
+    pub fn value(&self, kind: ValueKind) -> Value {
+        decode_value(&self.value, kind)
+    }
+}
+
+fn decode_value(data: &[u8; 4], kind: ValueKind) -> Value {
+    match kind {
+        ValueKind::Bool => Value::Bool(data[0] == 1),
+        ValueKind::U8 => Value::U8(data[0]),
+        ValueKind::I8 => Value::I8(i8::from_le_bytes([data[0]])),
+        ValueKind::U16 => Value::U16(u16::from_le_bytes([data[0], data[1]])),
+        ValueKind::I16 => Value::I16(i16::from_le_bytes([data[0], data[1]])),
+        ValueKind::U32 => Value::U32(u32::from_le_bytes(*data)),
+        ValueKind::I32 => Value::I32(i32::from_le_bytes(*data)),
+        ValueKind::Float => Value::Float(f32::from_le_bytes(*data)),
     }
 }
 
@@ -847,5 +911,47 @@ mod tests {
         Value::try_from_json(&serde_json::json!(13), ValueKind::U32).unwrap();
         Value::try_from_json(&serde_json::json!(-13), ValueKind::I32).unwrap();
         Value::try_from_json(&serde_json::json!(0.0), ValueKind::Float).unwrap();
+    }
+
+    #[test]
+    fn sdo_reply_float() {
+        // watchdog_timeout = 0.1, as sent by an ODrive
+        let reply = SdoReply::new(&[0x00, 0x0b, 0x01, 0x00, 0xcd, 0xcc, 0xcc, 0x3d]).unwrap();
+        assert_eq!(reply.endpoint(), 267);
+        assert!(matches!(reply.value(ValueKind::Float), Value::Float(v) if v == 0.1));
+    }
+
+    #[test]
+    fn sdo_reply_short_bool() {
+        // enable_watchdog = true: the ODrive sends a 5 byte reply for a bool
+        let reply = SdoReply::new(&[0x00, 0x0c, 0x01, 0x00, 0x01]).unwrap();
+        assert_eq!(reply.endpoint(), 268);
+        assert!(matches!(reply.value(ValueKind::Bool), Value::Bool(true)));
+    }
+
+    #[test]
+    fn sdo_reply_json_id() {
+        // Reply to request_json_id from an ODrive Pro on firmware 0.6.12
+        let reply = SdoReply::new(&[0x00, 0x00, 0x00, 0x00, 0x04, 0xd8, 0x33, 0x97]).unwrap();
+        assert_eq!(reply.endpoint(), 0);
+        assert!(matches!(
+            reply.value(ValueKind::U32),
+            Value::U32(0x9733_d804)
+        ));
+    }
+
+    #[test]
+    fn sdo_reply_invalid_length() {
+        assert!(SdoReply::new(&[0x00, 0x0b, 0x01]).is_none());
+        assert!(SdoReply::new(&[0; 9]).is_none());
+    }
+
+    #[test]
+    fn feedback_decodes_short_sdo_reply() {
+        let frame =
+            CanFrame::new(Id::new(1, 0x05).unwrap(), &[0x00, 0x0c, 0x01, 0x00, 0x01]).unwrap();
+        let (node, message) = feedback(&frame).unwrap();
+        assert_eq!(node, 1);
+        assert!(matches!(message, Message::SdoReply(reply) if reply.endpoint() == 268));
     }
 }
